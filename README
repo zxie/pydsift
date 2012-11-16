@@ -1,0 +1,7 @@
+Dense SIFT implementation in Python based on/copied from Svetlana Lazebnik
+and Yangqing Jia's code
+- http://www.cs.illinois.edu/homes/slazebni/research/SpatialPyramid.zip
+- https://github.com/Yangqing/dsift-python
+
+If find a way to make feature computation faster or add computation of
+features w.r.t. a start orientation please let me know :).
