@@ -60,7 +60,7 @@ class DenseSIFTExtractor:
                alpha: parameter for attenuation of angles (must be odd)
                sigma: standard deviation for Gaussian smoothing before
                       computing gradients
-                 ori: start orientation
+                 ori: start orientation (in degrees)
         '''
         self.grid_spacing = grid_spacing
         self.patch_size = patch_size
@@ -68,9 +68,7 @@ class DenseSIFTExtractor:
         self.num_bins = num_bins
         self.alpha = alpha
         self.sigma = sigma
-        self.ori = ori
-        if ori != 0:
-            raise Exception('Currently orientation != 0 not supported')
+        self.ori = (ori * np.pi / 180.0) % (2 * np.pi)
 
     def __str__(self):
         return 'DSIFT'
@@ -90,8 +88,6 @@ class DenseSIFTExtractor:
             descs0, _, _ = mlab.sp_dense_sift(img, self.grid_spacing,
                     self.patch_size, nout=3)
             descs0 = mlab.double(descs0)
-
-        angles = np.arange(0, 2 * np.pi, 2 * np.pi / self.num_angles)
 
         # Convert to grayscale
         if img.ndim == 3:
@@ -119,7 +115,17 @@ class DenseSIFTExtractor:
         # Calculate gradient magnitude and orientations
         I_mag = np.sqrt(I_x ** 2 + I_y ** 2)
         I_theta = np.arctan2(I_y, I_x)
-        I_theta[np.isnan(I_theta)] = 0
+
+        angles = np.arange(0, 2 * np.pi, 2 * np.pi / self.num_angles)
+
+        if self.ori != 0:
+            I_theta = (I_theta + self.ori + 2 * np.pi) % (2 * np.pi) - np.pi
+            #angles = (angles + self.ori + 2 * np.pi) % (2 * np.pi)
+
+        #print 'I_theta shape', I_theta.shape
+        #print 'I_theta max', np.max(I_theta)
+        #print 'I_theta min', np.min(I_theta)
+        #print I_theta[108:112, 108:112]
 
         # Orientation image (direction and magnitude)
         I_ori = np.zeros([rows, cols, self.num_angles])
@@ -131,6 +137,9 @@ class DenseSIFTExtractor:
                     np.sin(angles[k])) ** self.alpha, 0)
             I_ori[:, :, k] = tmp * I_mag
 
+        #print I_ori.shape
+        #print I_ori[108:112, 108:112, 2]
+
         margin = self.patch_size / 2
         cx = margin - 0.5
         sample_res = self.patch_size / float(self.num_bins)
@@ -140,11 +149,22 @@ class DenseSIFTExtractor:
         wr = weight_x.reshape(1, -1)
         wc = weight_x.reshape(-1, 1)
         for k in xrange(self.num_angles):
-            tmp = convolve2d(I_ori[:, :, k], wr)
-            tmp = convolve2d(tmp, wc)
+            if self.ori == 0:
+                tmp = convolve2d(I_ori[:, :, k], wr)
+                tmp = convolve2d(tmp, wc)
+            else:
+                tmp = convolve2d(np.rot90(I_ori[:, :, k]), wr)
+                tmp = convolve2d(tmp, wc)
+                tmp = np.rot90(tmp, k=3)
+            if k == 0:
+                print 'tmp shape', tmp.shape
+                print tmp[124:126, 124:126]
             offset = (tmp.shape[0] - I_ori.shape[0]) / 2.0
             I_ori[:, :, k] = tmp[np.ceil(offset):np.ceil(-offset),
                     np.ceil(offset):np.ceil(-offset)]
+
+        print I_ori.shape
+        print I_ori[107:112, 107:112, 0]
 
         tmp = np.linspace(0, self.patch_size, self.num_bins + 1).astype(int)
         sample_y, sample_x = np.meshgrid(tmp, tmp)  # Order on purpose
