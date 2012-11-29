@@ -6,7 +6,7 @@ Dense SIFT implementation based on Svetlana Lazebnik and Yangqing Jia's code
 
 import numpy as np
 from scipy.signal import convolve2d
-from scipy.misc import imread
+from scipy.misc import lena
 #import matplotlib.pyplot as plt
 
 # Flag to compare against Lazebnik's MATLAB implementation
@@ -247,7 +247,7 @@ class DenseSIFTExtractor:
 
 def main():
     extractor = DenseSIFTExtractor(patch_size=32)
-    I = imread('lena.png')
+    I = lena()
     extractor.extract_descriptors(I)
 
 if __name__ == '__main__':
