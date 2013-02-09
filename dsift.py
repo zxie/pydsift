@@ -84,7 +84,7 @@ class DenseSIFTExtractor:
         return int(self.patch_size / 2) - 1
 
     #@profile
-    def extract_descriptors(self, img):
+    def extract_descriptors(self, img, normalize=True):
         img = img.astype(np.double)
         imshape = img.shape
 
@@ -180,7 +180,10 @@ class DenseSIFTExtractor:
         [nrows, ncols, cols] = descs.shape
         descs = np.reshape(descs, [nrows * ncols, self.num_angles *\
                 self.num_bins ** 2], order='F')
-        descs = self.normalize_sift(descs.T)
+        if normalize:
+            descs = self.normalize_sift(descs.T)
+        else:
+            descs = descs.T
 
         if DEBUG:
             descs = descs.T
