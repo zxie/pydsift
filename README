@@ -3,5 +3,8 @@ and Yangqing Jia's code
 - http://www.cs.illinois.edu/homes/slazebni/research/SpatialPyramid.zip
 - https://github.com/Yangqing/dsift-python
 
+Not as fast as MATLAB implementation but should be faster than other
+Python implementation due to use of convolutions.
+
 If find a way to make feature computation faster or add computation of
 features w.r.t. a start orientation please let me know :).

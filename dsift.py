@@ -84,7 +84,7 @@ class DenseSIFTExtractor:
         return int(self.patch_size / 2) - 1
 
     #@profile
-    def extract_descriptors(self, img, normalize=True):
+    def extract_descriptors(self, img, normalize=True, flatten=True):
         img = img.astype(np.double)
         imshape = img.shape
 
@@ -202,9 +202,12 @@ class DenseSIFTExtractor:
         descs = np.reshape(descs, [nrows, ncols, self.num_angles *\
                 self.num_bins ** 2], order='F')
 
-        s = descs.shape
-        descs = np.reshape(descs, (s[0] * s[1], s[2]))
-        return descs.T, self.get_indices(imshape)
+        if flatten:
+            s = descs.shape
+            descs = np.reshape(descs, (s[0] * s[1], s[2]))
+            return descs.T, self.get_indices(imshape)
+        else:
+            return descs
 
     def get_indices(self, imshape):
         margin = self.get_padding()
