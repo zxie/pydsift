@@ -50,7 +50,8 @@ class DenseSIFTExtractor:
                  num_bins=4,
                  alpha=9.0,
                  sigma=1.0,
-                 ori=0):
+                 ori=0,
+                 signed=True):
         '''
         grid_spacing: specifies how densely to compute descriptors
           patch_size: size of patches over which to compute descriptors
@@ -68,6 +69,7 @@ class DenseSIFTExtractor:
         self.num_bins = num_bins
         self.alpha = alpha
         self.sigma = sigma
+        self.signed = signed
         assert ori in (0, 90, 180, 270),\
                 'Only ori in {0, 90, 180, 270} currently supported'
         self.ori = ori
@@ -123,8 +125,13 @@ class DenseSIFTExtractor:
         I_mag = np.sqrt(I_x ** 2 + I_y ** 2)
         I_theta = np.arctan2(I_y, I_x)
         I_theta[np.isnan(I_theta)] = 0
+        if not self.signed:
+            I_theta = (I_theta + np.pi) % np.pi
+            max_angle = np.pi
+        else:
+            max_angle = 2 * np.pi
 
-        angles = np.arange(0, 2 * np.pi, 2 * np.pi / self.num_angles)
+        angles = np.arange(0, max_angle, max_angle / self.num_angles)
 
         # Orientation image (direction and magnitude)
         I_ori = np.zeros([rows, cols, self.num_angles])
