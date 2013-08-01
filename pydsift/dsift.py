@@ -211,19 +211,28 @@ class DenseSIFTExtractor:
             print 'max diff: ', np.max(np.abs(diff))
             return
 
-        # TODO Way to remove this part?
-        descs = descs.T
-        descs = np.reshape(descs, [nrows, ncols, self.num_angles *\
-                self.num_bins ** 2], order='F')
-
         if flatten:
-            s = descs.shape
-            descs = np.reshape(descs, (s[0] * s[1], s[2]))
-            return descs.T, self.get_indices(imshape)
+            return descs, self.get_indices(imshape)
         else:
+            descs = descs.T
+            descs = np.reshape(descs, [nrows, ncols, self.num_angles *\
+                    self.num_bins ** 2], order='F')
             return descs
 
-    def get_indices(self, imshape):
+        # Old code..
+        # TODO Way to remove this part?
+        # descs = descs.T
+        # descs = np.reshape(descs, [nrows, ncols, self.num_angles *\
+        #         self.num_bins ** 2], order='F')
+        #if flatten:
+        #    s = descs.shape
+        #    descs = np.reshape(descs, (s[0] * s[1], s[2]))
+        #    return descs.T, self.get_indices(imshape)
+        #else:
+        #    return descs
+
+
+    def get_indices_old(self, imshape):
         margin = self.get_padding()
         rowcol2ind = np.zeros(([imshape[0], imshape[1]]))
         idx = 0
@@ -236,6 +245,19 @@ class DenseSIFTExtractor:
                     rowcol2ind[i, j] = (i - margin) *\
                             (imshape[1] - margin * 2) + (j - margin)
                     idx += 1
+        return rowcol2ind
+
+    def get_indices(self, imshape):
+        margin = self.get_padding()
+        rowcol2ind = np.zeros(([imshape[0], imshape[1]]))
+        for i in xrange(imshape[0]):
+            for j in xrange(imshape[1]):
+                if i < margin or j < margin or \
+                    i > imshape[0] - margin - 1 or j > imshape[1] - margin - 1:
+                    rowcol2ind[i, j] = -1
+                else:
+                    rowcol2ind[i, j] = (j - margin) *\
+                            (imshape[0] - margin * 2) + (i - margin)
         return rowcol2ind
 
     #@profile
@@ -266,9 +288,10 @@ class DenseSIFTExtractor:
 
 
 def main():
-    from scipy.misc import lena
     extractor = DenseSIFTExtractor(patch_size=32)
+    from scipy.misc import lena, imread
     I = lena()
+    #I = imread("pydsift/example.jpg")
     extractor.extract_descriptors(I)
 
 if __name__ == '__main__':
