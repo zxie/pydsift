@@ -6,7 +6,9 @@ Dense SIFT implementation based on Svetlana Lazebnik and Yangqing Jia's code
 
 import numpy as np
 from scipy.signal import convolve2d
-from scipy.misc import lena
+from scipy.ndimage import convolve1d
+
+import c_pydsift
 #import matplotlib.pyplot as plt
 
 # Flag to compare against Lazebnik's MATLAB implementation
@@ -152,11 +154,15 @@ class DenseSIFTExtractor:
         wr = weight_x.reshape(1, -1)
         wc = weight_x.reshape(-1, 1)
         for k in xrange(self.num_angles):
-            tmp = convolve2d(I_ori[:, :, k], wr)
-            tmp = convolve2d(tmp, wc)
-            offset = (tmp.shape[0] - I_ori.shape[0]) / 2.0
-            I_ori[:, :, k] = tmp[np.ceil(offset):np.ceil(-offset),
-                    np.ceil(offset):np.ceil(-offset)]
+            tmp = convolve1d(I_ori[:, :, k], wr.flatten(), axis=0,
+            mode='constant')
+            tmp = convolve1d(tmp, wr.flatten(), axis=1, mode='constant')
+            #tmp2 = convolve2d(I_ori[:, :, k], wr)
+            #tmp2 = convolve2d(tmp2, wc)
+            #offset = (tmp2.shape[0] - I_ori.shape[0]) / 2.0
+            #tmp2 = tmp2[np.ceil(offset):np.ceil(-offset), np.ceil(offset):np.ceil(-offset)]
+            #print np.abs(tmp2 - tmp3).max()
+            I_ori[:, :, k] = tmp
 
         tmp = np.linspace(0, self.patch_size, self.num_bins + 1).astype(int)
         sample_y, sample_x = np.meshgrid(tmp, tmp)  # Order on purpose
@@ -188,7 +194,8 @@ class DenseSIFTExtractor:
         descs = np.reshape(descs, [nrows * ncols, self.num_angles *\
                 self.num_bins ** 2], order='F')
         if normalize:
-            descs = self.normalize_sift(descs.T)
+            #descs = self.normalize_sift(descs.T)
+            descs = c_pydsift.normalize_sift(descs).T
         else:
             descs = descs.T
 
@@ -259,6 +266,7 @@ class DenseSIFTExtractor:
 
 
 def main():
+    from scipy.misc import lena
     extractor = DenseSIFTExtractor(patch_size=32)
     I = lena()
     extractor.extract_descriptors(I)
