@@ -190,13 +190,17 @@ class DenseSIFTExtractor:
         if self.ori != 0:
             descs = np.rot90(descs, k=4 - self.ori / 90)
 
-        [nrows, ncols, cols] = descs.shape
-        descs = np.reshape(descs, [nrows * ncols, self.num_angles *\
-                self.num_bins ** 2], order='F')
         if normalize:
+            #[nrows, ncols, cols] = descs.shape
+            #descs = np.reshape(descs, [nrows * ncols, self.num_angles *\
+            #        self.num_bins ** 2], order='F')
             #descs = self.normalize_sift(descs.T)
-            descs = c_pydsift.normalize_sift(descs).T
+            #descs = c_pydsift.normalize_sift(descs).T
+            descs = c_pydsift.reshape_and_normalize_sift(descs).T
         else:
+            [nrows, ncols, cols] = descs.shape
+            descs = np.reshape(descs, [nrows * ncols, self.num_angles *\
+                    self.num_bins ** 2], order='F')
             descs = descs.T
 
         if DEBUG:
@@ -290,8 +294,8 @@ class DenseSIFTExtractor:
 def main():
     extractor = DenseSIFTExtractor(patch_size=32)
     from scipy.misc import lena, imread
-    I = lena()
-    #I = imread("pydsift/example.jpg")
+    #I = lena()
+    I = imread("pydsift/example.jpg")
     extractor.extract_descriptors(I)
 
 if __name__ == '__main__':

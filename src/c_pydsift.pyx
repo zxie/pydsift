@@ -11,6 +11,52 @@ cdef inline int int_min(int a, int b): return a if a <= b else b
 cdef extern from "math.h":
     double sqrt(double x)
 
+def reshape_and_normalize_sift(np.ndarray[np.float_t, ndim=3] descs):
+    '''
+    Does sift normalization (normalize to 1, threshold at 0.2,
+    renormalize)
+    Also does high-contrast thresholding
+    '''
+    SIFT_THRES = 0.2
+    NORM_THRES = 1.0  # minimum normalization denominator
+
+    cdef int i, desc_idx, feat_idx
+    cdef np.float_t norm, value, new_norm
+
+    cdef int num_rows = descs.shape[0]
+    cdef int num_cols = descs.shape[1]
+    cdef int num_feats = descs.shape[2]
+    cdef int num_descs = num_rows * num_cols
+
+    cdef np.ndarray[np.float_t, ndim=2] out = np.empty((num_descs, num_feats),
+                                                       dtype=np.float)
+
+    for desc_idx in range(num_descs):
+        row_idx = desc_idx % num_rows
+        col_idx = desc_idx // num_rows
+
+        norm = 0
+        for feat_idx in range(num_feats):
+            value = descs[row_idx, col_idx, feat_idx]
+            out[desc_idx, feat_idx] = value
+            norm += value ** 2
+
+        norm = sqrt(norm)
+
+        if norm > NORM_THRES:
+            new_norm = 0
+            for feat_idx in range(num_feats):
+                value = out[desc_idx, feat_idx] / norm
+                if value > SIFT_THRES:
+                    value = SIFT_THRES
+                out[desc_idx, feat_idx] = value
+                new_norm += value * value
+            new_norm = sqrt(new_norm)
+            for feat_idx in range(num_feats):
+                out[desc_idx, feat_idx] /= new_norm
+
+    return out
+
 def normalize_sift(np.ndarray[np.float_t, ndim=2] descs):
     '''
     Does sift normalization (normalize to 1, threshold at 0.2,
