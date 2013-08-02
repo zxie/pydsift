@@ -27,6 +27,7 @@ def reshape_and_normalize_sift(np.ndarray[np.float_t, ndim=3] descs):
     cdef int i, desc_idx, feat_idx
     cdef np.float_t norm, value, new_norm
 
+    cdef int row_idx, col_idx
     cdef int num_rows = descs.shape[0]
     cdef int num_cols = descs.shape[1]
     cdef int num_feats = descs.shape[2]
@@ -35,8 +36,8 @@ def reshape_and_normalize_sift(np.ndarray[np.float_t, ndim=3] descs):
     cdef np.ndarray[np.float_t, ndim=2] out = np.empty((num_descs, num_feats),
                                                        dtype=np.float)
 
-    with nogil, parallel():
-        for desc_idx in prange(num_descs, num_threads=1):
+    with nogil, parallel(num_threads=6):
+        for desc_idx in prange(num_descs):
             row_idx = desc_idx % num_rows
             col_idx = desc_idx // num_rows
 
