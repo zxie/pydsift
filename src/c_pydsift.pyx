@@ -1,6 +1,9 @@
 #cython: boundscheck=False, wraparound=False, profile=False
 
 from __future__ import division
+import cython
+from cython.parallel import parallel, prange
+from libc.stdio cimport printf
 
 import numpy as np
 cimport numpy as np
@@ -9,8 +12,9 @@ cdef inline int int_max(int a, int b): return a if a >= b else b
 cdef inline int int_min(int a, int b): return a if a <= b else b
 
 cdef extern from "math.h":
-    double sqrt(double x)
+    double sqrt(double x) nogil
 
+@cython.cdivision(True)
 def reshape_and_normalize_sift(np.ndarray[np.float_t, ndim=3] descs):
     '''
     Does sift normalization (normalize to 1, threshold at 0.2,
@@ -31,29 +35,30 @@ def reshape_and_normalize_sift(np.ndarray[np.float_t, ndim=3] descs):
     cdef np.ndarray[np.float_t, ndim=2] out = np.empty((num_descs, num_feats),
                                                        dtype=np.float)
 
-    for desc_idx in range(num_descs):
-        row_idx = desc_idx % num_rows
-        col_idx = desc_idx // num_rows
+    with nogil, parallel():
+        for desc_idx in prange(num_descs, num_threads=1):
+            row_idx = desc_idx % num_rows
+            col_idx = desc_idx // num_rows
 
-        norm = 0
-        for feat_idx in range(num_feats):
-            value = descs[row_idx, col_idx, feat_idx]
-            out[desc_idx, feat_idx] = value
-            norm += value ** 2
-
-        norm = sqrt(norm)
-
-        if norm > NORM_THRES:
-            new_norm = 0
+            norm = 0
             for feat_idx in range(num_feats):
-                value = out[desc_idx, feat_idx] / norm
-                if value > SIFT_THRES:
-                    value = SIFT_THRES
+                value = descs[row_idx, col_idx, feat_idx]
                 out[desc_idx, feat_idx] = value
-                new_norm += value * value
-            new_norm = sqrt(new_norm)
-            for feat_idx in range(num_feats):
-                out[desc_idx, feat_idx] /= new_norm
+                norm += value ** 2
+
+            norm = sqrt(norm)
+
+            if norm > NORM_THRES:
+                new_norm = 0
+                for feat_idx in range(num_feats):
+                    value = out[desc_idx, feat_idx] / norm
+                    if value > SIFT_THRES:
+                        value = SIFT_THRES
+                    out[desc_idx, feat_idx] = value
+                    new_norm += value * value
+                new_norm = sqrt(new_norm)
+                for feat_idx in range(num_feats):
+                    out[desc_idx, feat_idx] /= new_norm
 
     return out
 
