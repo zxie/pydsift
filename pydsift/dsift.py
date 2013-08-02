@@ -118,8 +118,8 @@ class DenseSIFTExtractor:
 
         # Smooth
         G_x, G_y = dgauss_filt(self.sigma)
-        I_x = -convolve2d(img, G_x, mode='same')
-        I_y = -convolve2d(img, G_y, mode='same')
+        I_x = -c_pydsift.conv2(img, G_x)
+        I_y = -c_pydsift.conv2(img, G_y)
         I_x = I_x[2:-2, 2:-2]
         I_y = I_y[2:-2, 2:-2]
 
