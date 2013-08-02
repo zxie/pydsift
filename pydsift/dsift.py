@@ -253,15 +253,16 @@ class DenseSIFTExtractor:
 
     def get_indices(self, imshape):
         margin = self.get_padding()
-        rowcol2ind = np.zeros(([imshape[0], imshape[1]]))
-        for i in xrange(imshape[0]):
-            for j in xrange(imshape[1]):
-                if i < margin or j < margin or \
-                    i > imshape[0] - margin - 1 or j > imshape[1] - margin - 1:
-                    rowcol2ind[i, j] = -1
-                else:
-                    rowcol2ind[i, j] = (j - margin) *\
-                            (imshape[0] - margin * 2) + (i - margin)
+        rowcol2ind = c_pydsift.get_indices(imshape[0], imshape[1], margin)
+        #rowcol2ind = np.zeros(([imshape[0], imshape[1]]))
+        #for i in xrange(imshape[0]):
+        #    for j in xrange(imshape[1]):
+        #        if i < margin or j < margin or \
+        #            i > imshape[0] - margin - 1 or j > imshape[1] - margin - 1:
+        #            rowcol2ind[i, j] = -1
+        #        else:
+        #            rowcol2ind[i, j] = (j - margin) *\
+        #                    (imshape[0] - margin * 2) + (i - margin)
         return rowcol2ind
 
     #@profile

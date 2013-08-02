@@ -91,6 +91,20 @@ def normalize_sift(np.ndarray[np.float_t, ndim=2] descs):
 
     return descs
 
+def get_indices(int rows, int cols, int margin):
+    cdef np.ndarray[np.int_t, ndim=2] rowcol2ind = np.empty((rows, cols), dtype=np.int)
+    cdef int i, j
+
+    for i in range(rows):
+        for j in range(cols):
+            if i < margin or j < margin or \
+                i > rows - margin - 1 or j > cols - margin - 1:
+                rowcol2ind[i, j] = -1
+            else:
+                rowcol2ind[i, j] = (j - margin) *\
+                        (rows - margin * 2) + (i - margin)
+    return rowcol2ind
+
 def conv2(np.ndarray[np.float_t, ndim=2] f, np.ndarray[np.float_t, ndim=2] g):
 
     if g.shape[0] % 2 != 1 or g.shape[1] % 2 != 1:
