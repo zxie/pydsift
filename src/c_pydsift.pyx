@@ -15,7 +15,7 @@ cdef extern from "math.h":
     double sqrt(double x) nogil
 
 @cython.cdivision(True)
-def reshape_and_normalize_sift(np.ndarray[np.float_t, ndim=3] descs):
+def reshape_and_normalize_sift(np.ndarray[np.float32_t, ndim=3] descs):
     '''
     Does sift normalization (normalize to 1, threshold at 0.2,
     renormalize)
@@ -25,7 +25,7 @@ def reshape_and_normalize_sift(np.ndarray[np.float_t, ndim=3] descs):
     NORM_THRES = 1.0  # minimum normalization denominator
 
     cdef int i, desc_idx, feat_idx
-    cdef np.float_t norm, value, new_norm
+    cdef np.float32_t norm, value, new_norm
 
     cdef int row_idx, col_idx
     cdef int num_rows = descs.shape[0]
@@ -33,10 +33,10 @@ def reshape_and_normalize_sift(np.ndarray[np.float_t, ndim=3] descs):
     cdef int num_feats = descs.shape[2]
     cdef int num_descs = num_rows * num_cols
 
-    cdef np.ndarray[np.float_t, ndim=2] out = np.empty((num_descs, num_feats),
-                                                       dtype=np.float)
+    cdef np.ndarray[np.float32_t, ndim=2] out = np.empty((num_descs, num_feats),
+                                                       dtype=np.float32)
 
-    with nogil, parallel(num_threads=6):
+    with nogil, parallel(num_threads=4):
         for desc_idx in prange(num_descs):
             row_idx = desc_idx % num_rows
             col_idx = desc_idx // num_rows

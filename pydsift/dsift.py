@@ -89,7 +89,7 @@ class DenseSIFTExtractor:
 
     #@profile
     def extract_descriptors(self, img, normalize=True, flatten=True):
-        img = img.astype(np.double)
+        img = img.astype(np.float64)
         imshape = img.shape
 
         if self.ori != 0:
@@ -136,13 +136,13 @@ class DenseSIFTExtractor:
         angles = np.arange(0, max_angle, max_angle / self.num_angles)
 
         # Orientation image (direction and magnitude)
-        I_ori = np.zeros([rows, cols, self.num_angles])
+        I_ori = np.empty([rows, cols, self.num_angles], dtype=np.float32)
         I_cos = np.cos(I_theta)
         I_sin = np.sin(I_theta)
 
         for k in xrange(self.num_angles):
-            tmp = np.maximum((I_cos * np.cos(angles[k]) + I_sin *\
-                    np.sin(angles[k])) ** self.alpha, 0)
+            # SLOW
+            tmp = np.maximum((I_cos * np.cos(angles[k]) + I_sin * np.sin(angles[k])) ** self.alpha, 0)
             I_ori[:, :, k] = tmp * I_mag
 
         margin = self.patch_size / 2
@@ -151,12 +151,10 @@ class DenseSIFTExtractor:
         weight_x = abs(np.arange(self.patch_size) + 1 - cx) / sample_res
         weight_x = (1 - weight_x) * (weight_x <= 1)
 
-        wr = weight_x.reshape(1, -1)
-        wc = weight_x.reshape(-1, 1)
+        wr = weight_x.flatten()
         for k in xrange(self.num_angles):
-            tmp = convolve1d(I_ori[:, :, k], wr.flatten(), axis=0,
-            mode='constant')
-            tmp = convolve1d(tmp, wr.flatten(), axis=1, mode='constant')
+            tmp = convolve1d(I_ori[:, :, k], wr, axis=0, mode='constant')
+            tmp = convolve1d(tmp, wr, axis=1, mode='constant')
             #tmp2 = convolve2d(I_ori[:, :, k], wr)
             #tmp2 = convolve2d(tmp2, wc)
             #offset = (tmp2.shape[0] - I_ori.shape[0]) / 2.0
@@ -177,12 +175,13 @@ class DenseSIFTExtractor:
         grid_y = np.arange(margin, rows - margin + 2,
                 self.grid_spacing, dtype=int)
 
-        descs = np.zeros((grid_y.size, grid_x.size, self.num_angles *\
-                self.num_bins ** 2))
+        descs = np.empty((grid_y.size, grid_x.size, self.num_angles * self.num_bins ** 2),
+                dtype=np.float32)
         b = 0
         for k in xrange(self.num_bins ** 2):
             inds_x = grid_x + sample_x[k]
             inds_y = grid_y + sample_y[k]
+            # SLOW
             descs[:, :, b:b + self.num_angles] =\
                     I_ori.take(inds_y, axis=0).take(inds_x, axis=1)
             b += self.num_angles
@@ -239,7 +238,6 @@ class DenseSIFTExtractor:
     def get_indices_old(self, imshape):
         margin = self.get_padding()
         rowcol2ind = np.zeros(([imshape[0], imshape[1]]))
-        idx = 0
         for i in xrange(imshape[0]):
             for j in xrange(imshape[1]):
                 if i < margin or j < margin or \
@@ -248,7 +246,6 @@ class DenseSIFTExtractor:
                 else:
                     rowcol2ind[i, j] = (i - margin) *\
                             (imshape[1] - margin * 2) + (j - margin)
-                    idx += 1
         return rowcol2ind
 
     def get_indices(self, imshape):

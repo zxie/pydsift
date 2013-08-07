@@ -2,3 +2,4 @@
 build
 *.so
 *.jpg
+c_pydsift.c
