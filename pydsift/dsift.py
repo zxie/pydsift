@@ -153,6 +153,7 @@ class DenseSIFTExtractor:
 
         wr = weight_x.flatten()
         for k in xrange(self.num_angles):
+            # SLOW
             tmp = convolve1d(I_ori[:, :, k], wr, axis=0, mode='constant')
             tmp = convolve1d(tmp, wr, axis=1, mode='constant')
             #tmp2 = convolve2d(I_ori[:, :, k], wr)
@@ -195,6 +196,7 @@ class DenseSIFTExtractor:
             #        self.num_bins ** 2], order='F')
             #descs = self.normalize_sift(descs.T)
             #descs = c_pydsift.normalize_sift(descs).T
+            # SLOW
             descs = c_pydsift.reshape_and_normalize_sift(descs).T
         else:
             [nrows, ncols, cols] = descs.shape
